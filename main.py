@@ -2,7 +2,9 @@ from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 import sqlite3
 
+
 app = FastAPI()
+
 
 DATABASE = "tasks.db"
 
@@ -11,6 +13,7 @@ def get_db():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
+
 
 def create_tables():
     conn = get_db()
@@ -26,6 +29,7 @@ def create_tables():
 
     conn.commit()
     conn.close()
+
 
 def seed_tasks():
     conn = get_db()
@@ -52,27 +56,8 @@ def seed_tasks():
     conn.close()
 
 
-tasks = [
-    {
-        "id": 1,
-        "title": "Learn FastAPI",
-        "done": False
-    },
-    {
-        "id": 2,
-        "title": "Build CRUD API",
-        "done": False
-    },
-    {
-        "id": 3,
-        "title": "Submit FlyRank assignment",
-        "done": True
-    }
-]
-
 create_tables()
 seed_tasks()
-
 
 
 @app.get("/")
@@ -93,20 +78,39 @@ def health():
 
 @app.get("/tasks")
 def get_tasks():
-    return tasks
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM tasks")
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return [dict(row) for row in rows]
 
 
 @app.get("/tasks/{id}")
 def get_task(id: int):
 
-    for task in tasks:
-        if task["id"] == id:
-            return task
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (id,)
+    )
+
+    task = cursor.fetchone()
+
+    conn.close()
+
+    if task:
+        return dict(task)
 
     raise HTTPException(
         status_code=404,
         detail={
-            "error": f"Task {id} not found"
+            "error": "Task not found"
         }
     )
 
@@ -127,12 +131,10 @@ def create_task(task: TaskCreate):
         )
 
     new_task = {
-        "id": len(tasks) + 1,
+        "id": 999,
         "title": task.title,
         "done": False
     }
-
-    tasks.append(new_task)
 
     return new_task
 
@@ -145,52 +147,16 @@ class TaskUpdate(BaseModel):
 @app.put("/tasks/{id}")
 def update_task(id: int, task: TaskUpdate):
 
-    for existing_task in tasks:
-        if existing_task["id"] == id:
-
-            if task.title is None and task.done is None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={
-                        "error": "No update data provided"
-                    }
-                )
-
-            if task.title is not None:
-                if not task.title.strip():
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail={
-                            "error": "Title cannot be empty"
-                        }
-                    )
-
-                existing_task["title"] = task.title
-
-            if task.done is not None:
-                existing_task["done"] = task.done
-
-            return existing_task
-
     raise HTTPException(
-        status_code=404,
-        detail={
-            "error": f"Task {id} not found"
-        }
+        status_code=501,
+        detail="Not implemented yet"
     )
 
 
 @app.delete("/tasks/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(id: int):
 
-    for index, task in enumerate(tasks):
-        if task["id"] == id:
-            tasks.pop(index)
-            return
-
     raise HTTPException(
-        status_code=404,
-        detail={
-            "error": f"Task {id} not found"
-        }
+        status_code=501,
+        detail="Not implemented yet"
     )
