@@ -82,6 +82,7 @@ def get_tasks():
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM tasks")
+
     rows = cursor.fetchall()
 
     conn.close()
@@ -130,13 +131,31 @@ def create_task(task: TaskCreate):
             }
         )
 
-    new_task = {
-        "id": 999,
-        "title": task.title,
-        "done": False
-    }
+    conn = get_db()
+    cursor = conn.cursor()
 
-    return new_task
+    cursor.execute(
+        """
+        INSERT INTO tasks (title, done)
+        VALUES (?, ?)
+        """,
+        (task.title, False)
+    )
+
+    conn.commit()
+
+    task_id = cursor.lastrowid
+
+    cursor.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (task_id,)
+    )
+
+    new_task = cursor.fetchone()
+
+    conn.close()
+
+    return dict(new_task)
 
 
 class TaskUpdate(BaseModel):
