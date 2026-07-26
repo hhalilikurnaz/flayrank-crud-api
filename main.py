@@ -166,16 +166,109 @@ class TaskUpdate(BaseModel):
 @app.put("/tasks/{id}")
 def update_task(id: int, task: TaskUpdate):
 
-    raise HTTPException(
-        status_code=501,
-        detail="Not implemented yet"
+    if task.title is None and task.done is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "No update data provided"
+            }
+        )
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (id,)
     )
+
+    existing_task = cursor.fetchone()
+
+    if existing_task is None:
+        conn.close()
+
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Task not found"
+            }
+        )
+
+    if task.title is not None:
+
+        if not task.title.strip():
+            conn.close()
+
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": "Title cannot be empty"
+                }
+            )
+
+        cursor.execute(
+            """
+            UPDATE tasks
+            SET title = ?
+            WHERE id = ?
+            """,
+            (task.title, id)
+        )
+
+    if task.done is not None:
+
+        cursor.execute(
+            """
+            UPDATE tasks
+            SET done = ?
+            WHERE id = ?
+            """,
+            (task.done, id)
+        )
+
+    conn.commit()
+
+    cursor.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (id,)
+    )
+
+    updated_task = cursor.fetchone()
+
+    conn.close()
+
+    return dict(updated_task)
 
 
 @app.delete("/tasks/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(id: int):
 
-    raise HTTPException(
-        status_code=501,
-        detail="Not implemented yet"
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (id,)
     )
+
+    task = cursor.fetchone()
+
+    if task is None:
+        conn.close()
+
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Task not found"
+            }
+        )
+
+    cursor.execute(
+        "DELETE FROM tasks WHERE id = ?",
+        (id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return
