@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 
+from auth import router as auth_router
 from database import (
     create_tables,
     seed_tasks,
@@ -13,6 +14,7 @@ from database import (
 
 
 app = FastAPI()
+app.include_router(auth_router)
 
 
 create_tables()

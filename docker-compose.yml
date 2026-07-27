@@ -22,6 +22,8 @@ services:
     environment:
       # Inside Compose, the DB host is the service name `db` (not localhost).
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-dev}@db:5432/${POSTGRES_DB:-tasks}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
     depends_on:
       db:
         condition: service_healthy

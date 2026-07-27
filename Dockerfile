@@ -5,7 +5,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main.py database.py ./
+COPY main.py database.py supabase_client.py auth.py ./
 
 EXPOSE 8000
 
