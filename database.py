@@ -53,3 +53,50 @@ def seed_tasks():
 
     cursor.close()
     conn.close()
+
+
+def get_all_tasks():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT id, title, done FROM tasks"
+    )
+
+    rows = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return [
+        {
+            "id": row[0],
+            "title": row[1],
+            "done": row[2]
+        }
+        for row in rows
+    ]
+
+
+def get_task_by_id(task_id: int):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT id, title, done FROM tasks WHERE id = %s",
+        (task_id,)
+    )
+
+    row = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if row:
+        return {
+            "id": row[0],
+            "title": row[1],
+            "done": row[2]
+        }
+
+    return None
