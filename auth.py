@@ -82,3 +82,14 @@ def login(credentials: AuthCredentials):
         ) from exc
 
     return _auth_response(result.user, result.session)
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout():
+    try:
+        supabase.auth.sign_out()
+    except AuthApiError as exc:
+        raise HTTPException(
+            status_code=exc.status or status.HTTP_400_BAD_REQUEST,
+            detail={"error": exc.message},
+        ) from exc

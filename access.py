@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Header, HTTPException, status
+from fastapi import APIRouter, Depends
 
-from auth_utils import verify_token
+from dependencies import get_current_user
 
 
 public_router = APIRouter(prefix="/public", tags=["public"])
@@ -15,29 +15,19 @@ def public_info():
 
 
 @protected_router.get("/profile")
-def protected_profile(authorization: str | None = Header(default=None)):
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authorization token",
-        )
-
-    scheme, _, token = authorization.partition(" ")
-    if scheme.lower() != "bearer" or not token.strip():
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization header",
-        )
-
-    try:
-        user = verify_token(token.strip())
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
-
+def protected_profile(user=Depends(get_current_user)):
     return {
         "id": user.id,
         "email": user.email,
+    }
+
+
+@protected_router.get("/dashboard")
+def protected_dashboard(user=Depends(get_current_user)):
+    return {
+        "message": "Dashboard access granted",
+        "user": {
+            "id": user.id,
+            "email": user.email,
+        },
     }
