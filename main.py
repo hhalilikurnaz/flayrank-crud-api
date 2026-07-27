@@ -5,7 +5,10 @@ from database import (
     create_tables,
     seed_tasks,
     get_all_tasks,
-    get_task_by_id
+    get_task_by_id,
+    create_task as create_task_db,
+    update_task as update_task_db,
+    delete_task as delete_task_db
 )
 
 
@@ -61,10 +64,15 @@ class TaskCreate(BaseModel):
 @app.post("/tasks", status_code=status.HTTP_201_CREATED)
 def create_task(task: TaskCreate):
 
-    raise HTTPException(
-        status_code=501,
-        detail="Not implemented yet"
-    )
+    if not task.title.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "Title cannot be empty"
+            }
+        )
+
+    return create_task_db(task.title)
 
 
 class TaskUpdate(BaseModel):
@@ -75,16 +83,44 @@ class TaskUpdate(BaseModel):
 @app.put("/tasks/{id}")
 def update_task(id: int, task: TaskUpdate):
 
-    raise HTTPException(
-        status_code=501,
-        detail="Not implemented yet"
-    )
+    if task.title is None and task.done is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "No update data provided"
+            }
+        )
+
+    if task.title is not None and not task.title.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "Title cannot be empty"
+            }
+        )
+
+    updated_task = update_task_db(id, title=task.title, done=task.done)
+
+    if updated_task is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Task not found"
+            }
+        )
+
+    return updated_task
 
 
 @app.delete("/tasks/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(id: int):
 
-    raise HTTPException(
-        status_code=501,
-        detail="Not implemented yet"
-    )
+    deleted = delete_task_db(id)
+
+    if not deleted:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Task not found"
+            }
+        )

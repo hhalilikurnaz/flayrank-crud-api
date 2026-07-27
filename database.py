@@ -100,3 +100,112 @@ def get_task_by_id(task_id: int):
         }
 
     return None
+
+
+def create_task(title: str):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO tasks (title, done)
+        VALUES (%s, %s)
+        RETURNING id, title, done
+        """,
+        (title, False)
+    )
+
+    row = cursor.fetchone()
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {
+        "id": row[0],
+        "title": row[1],
+        "done": row[2]
+    }
+
+
+def update_task(task_id: int, title=None, done=None):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT id, title, done FROM tasks WHERE id = %s",
+        (task_id,)
+    )
+
+    existing = cursor.fetchone()
+
+    if existing is None:
+        cursor.close()
+        conn.close()
+        return None
+
+    if title is not None:
+        cursor.execute(
+            """
+            UPDATE tasks
+            SET title = %s
+            WHERE id = %s
+            """,
+            (title, task_id)
+        )
+
+    if done is not None:
+        cursor.execute(
+            """
+            UPDATE tasks
+            SET done = %s
+            WHERE id = %s
+            """,
+            (done, task_id)
+        )
+
+    conn.commit()
+
+    cursor.execute(
+        "SELECT id, title, done FROM tasks WHERE id = %s",
+        (task_id,)
+    )
+
+    row = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "id": row[0],
+        "title": row[1],
+        "done": row[2]
+    }
+
+
+def delete_task(task_id: int):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT id FROM tasks WHERE id = %s",
+        (task_id,)
+    )
+
+    task = cursor.fetchone()
+
+    if task is None:
+        cursor.close()
+        conn.close()
+        return False
+
+    cursor.execute(
+        "DELETE FROM tasks WHERE id = %s",
+        (task_id,)
+    )
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return True
